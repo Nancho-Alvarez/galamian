@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+# TODO: re-think the rhythm patterns (string with placeholders)
+
 import re
 
 class rithmic_pattern:

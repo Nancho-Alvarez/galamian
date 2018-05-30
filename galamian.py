@@ -1,66 +1,17 @@
 #!/usr/bin/python3
 
-# TODO: re-think the rhythm patterns (string with placeholders) DONE!
-# TODO: re-implement escala using the new class rhythm_pattern
+# TODO: melodic_pattern should be given with scale grades, not note names.
 
 import re
 
-class rythmic_pattern:
+class rhythmic_pattern:
     def __init__(self, string, time_signature="4/4"):
         self.time_signature=time_signature
-        def placeholder(value):
-            return '#' + value.group(0) +'#'
         regex=r'((?<![/r])\d+(?!/)\.*|(?<= )\.)'
-        (s, n) = re.subn(regex, placeholder, string)
+        (s, n) = re.subn(regex, '#\g<0>%', string)
         ties = s.count('~')
-        self.string = s.replace('#.#', '##')
+        self.string = s.replace('#.%', '#%')
         self.l = n - ties
-        print (self.string)
-        print(self.l)
-
-    def a__init__(self, string, time_signature="4/4"):
-        self.time_signature=time_signature
-        string=string.replace('~', ' ~ ')
-        string=re.sub('times\s*', 'times', string)
-        string=re.sub('\s*{\s*', '{ ', string)
-        string=re.sub('\s*}', '}', string)
-        tokens=string.split()
-        l=len(tokens)
-        i=0
-        n=0
-        self.values=[]
-        self.pre=[]
-        self.post=[]
-        self.tie=[]
-        self.rest=[]
-        tresillo=''
-        while i<l:
-            if tokens[i] == '~':
-               self.tie[n-1]+='~' + tokens[i+1]
-               i=i+1
-            elif tokens[i][0] == 'r':
-                if n==0:
-                    tresillo+=tokens[i]+' '
-                else:
-                    self.rest[n-1]+= tokens[i]
-            elif tokens[i][-1]=='{':
-                tresillo+=tokens[i]
-            else:
-                r=re.match(r"(\d*\.*)(.*)", tokens[i])
-                numero=r.group(1)
-                if numero == '.':
-                    numero=''
-                scripts=r.group(2)
-                self.pre.append(tresillo)
-                self.values.append(numero)
-                self.post.append(scripts)
-                self.tie.append('')
-                self.rest.append('')
-                tresillo=''
-                n=n+1
-            i=i+1
-        self.l=n
-        return
 
 class melodic_pattern:
     def __init__(self, string, key_signature='c'):
@@ -80,7 +31,16 @@ class bowing_pattern:
 
 class fingering_pattern:
     def __init__(self, string):
-        pass
+        s=string.replace(' ','')
+        fingers=list(s)
+        l=len(fingers)
+        for i in range(l):
+            if fingers[i]=='.':
+                fingers[i]=''
+            else:
+                fingers[i]='-' + fingers[i]
+        self.fingers=fingers
+        self.l=l
         return
 
 class repeat_pattern:
@@ -89,35 +49,33 @@ class repeat_pattern:
         return
 
 class escala:
-    def __init__(self, melody, fingering, bowing, rythm):
+    def __init__(self, melody, fingering, bowing, rhythm):
         self.key_signature=melody.key_signature
-        self.time_signature=rythm.time_signature
+        self.time_signature=rhythm.time_signature
         m=melody.l
-        r=rythm.l
         b=bowing.l
+        ritmo=rhythm.string
+        r=len(ritmo)
         s=''
-        for i in range(m):
-            if i%r==0:
+        i=0
+        n=0
+        while i < r:
+            c=ritmo[i]
+            if c=='#':
+                s+=melody.notas[n]
+            elif c=='%':
+                s+=bowing.bowings[n%b]
+                s+=fingering.fingers[n]
+                n+=1
+            else:
+                s+=c
+            if c=='~':
+                n-=1
+            i+=1
+            if i==r and n<m:
+                i=0
                 s+='\n    '
-            s+=rythm.pre[i%r]
-            s+=melody.notas[i]
-            s+=rythm.values[i%r]
-            s+=bowing.bowings[i%b]
-            s+=rythm.post[i%r]
-            s+=' '
-            if rythm.tie[i%r]:
-                ties=rythm.tie[i%r].split('~')
-                ties=ties[1:]
-                print (ties)
-                for j in ties:
-                    s+='~ '
-                    s+=melody.notas[i]
-                    s+=j
-                s+=' '
-            if rythm.rest[i%r]:
-                s+=rythm.rest[i%r]
         self.lilypond_string=s
-
         return
 
     def __str__(self):
@@ -127,18 +85,20 @@ class escala:
         s ='\\score{\n'
         s+="  \\new Staff \\relative c'{\n"
         s+="    \\key " + self.key_signature + " \\major\n"
-        s+="    \\time " + self.time_signature
+        s+="    \\time " + self.time_signature + "\n"
         s+="    " + self.lilypond_string + "\n"
-        s+='    \\bar "||"'
+        s+='    \\bar "||"\n'
         s+="  }\n}\n"
         print(s)
 
 
 
-ritmo=rythmic_pattern(r"8 ~ 16 r r4 .->")
-melodia=melodic_pattern("c d e f g a b c d e f g")
-arcos=bowing_pattern(r".")
-digitacion=fingering_pattern("1...........")
+ritmo=rhythmic_pattern(r"16","6/8")
+#melodia=melodic_pattern(
+#"1 2 3 4 5 6 7 1 2 3 4 5 6 7 1 2 3 4 5 6 7 1 7 6 5 4 3 2 1 7 6 5 4 3 2 1 7 6 5 4 3 2 1", "-2")
+melodia=melodic_pattern("bes d c bes c d ees f g a bes c d ees f g a bes c d ees f g a bes a g f ees d c bes a g f ees d c bes a g f ees d c bes d c", "bes")
+arcos=bowing_pattern(r"( . ) ( . )")
+digitacion=fingering_pattern("1....... .....1.. ....1... 44...3.. 2....... ........")
 
 a=escala(melodia, digitacion, arcos, ritmo)
 

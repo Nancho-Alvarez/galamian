@@ -1,11 +1,24 @@
 #!/usr/bin/python3
 
-# TODO: re-think the rhythm patterns (string with placeholders)
+# TODO: re-think the rhythm patterns (string with placeholders) DONE!
+# TODO: re-implement escala using the new class rhythm_pattern
 
 import re
 
-class rithmic_pattern:
+class rythmic_pattern:
     def __init__(self, string, time_signature="4/4"):
+        self.time_signature=time_signature
+        def placeholder(value):
+            return '#' + value.group(0) +'#'
+        regex=r'((?<![/r])\d+(?!/)\.*|(?<= )\.)'
+        (s, n) = re.subn(regex, placeholder, string)
+        ties = s.count('~')
+        self.string = s.replace('#.#', '##')
+        self.l = n - ties
+        print (self.string)
+        print(self.l)
+
+    def a__init__(self, string, time_signature="4/4"):
         self.time_signature=time_signature
         string=string.replace('~', ' ~ ')
         string=re.sub('times\s*', 'times', string)
@@ -76,24 +89,24 @@ class repeat_pattern:
         return
 
 class escala:
-    def __init__(self, melody, fingering, bowing, rithm):
+    def __init__(self, melody, fingering, bowing, rythm):
         self.key_signature=melody.key_signature
-        self.time_signature=rithm.time_signature
+        self.time_signature=rythm.time_signature
         m=melody.l
-        r=rithm.l
+        r=rythm.l
         b=bowing.l
         s=''
         for i in range(m):
             if i%r==0:
                 s+='\n    '
-            s+=rithm.pre[i%r]
+            s+=rythm.pre[i%r]
             s+=melody.notas[i]
-            s+=rithm.values[i%r]
+            s+=rythm.values[i%r]
             s+=bowing.bowings[i%b]
-            s+=rithm.post[i%r]
+            s+=rythm.post[i%r]
             s+=' '
-            if rithm.tie[i%r]:
-                ties=rithm.tie[i%r].split('~')
+            if rythm.tie[i%r]:
+                ties=rythm.tie[i%r].split('~')
                 ties=ties[1:]
                 print (ties)
                 for j in ties:
@@ -101,8 +114,8 @@ class escala:
                     s+=melody.notas[i]
                     s+=j
                 s+=' '
-            if rithm.rest[i%r]:
-                s+=rithm.rest[i%r]
+            if rythm.rest[i%r]:
+                s+=rythm.rest[i%r]
         self.lilypond_string=s
 
         return
@@ -122,7 +135,7 @@ class escala:
 
 
 
-ritmo=rithmic_pattern(r"r4 \times 2/3{r8 8 .}", "2/4")
+ritmo=rythmic_pattern(r"8 ~ 16 r r4 .->")
 melodia=melodic_pattern("c d e f g a b c d e f g")
 arcos=bowing_pattern(r".")
 digitacion=fingering_pattern("1...........")

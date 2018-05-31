@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# TODO: melodic_pattern should be given with scale grades, not note names.
+# TODO: calculate the note names in a different function
 
 import re
 
@@ -14,10 +14,39 @@ class rhythmic_pattern:
         self.l = n - ties
 
 class melodic_pattern:
-    def __init__(self, string, key_signature='c'):
-        self.key_signature=key_signature
-        self.notas=string.split()
-        self.l=len(self.notas)
+    def __init__(self, string, key_signature=0):
+        note_names=['c','d','e','f','g','a','b']
+        key_names=['c', 'g', 'd', 'a', 'e', 'b', 'fis', 'cis',
+                'ces', 'ges', 'des', 'aes', 'ees', 'bes', 'f']
+        nkeys=len(key_names)
+        self.key_signature=key_names[key_signature % nkeys]
+        tokens=string.split()
+        l=len(tokens)
+        grades=[0]*l
+        accidentals=[0]*l
+        self.notes=['']*l
+        for i in range(l):
+            item=tokens[i]
+            r=re.match('([1-7])([+-=]*)', item)
+            (g, a) = (r.group(1), r.group(2))
+            grades[i]=int(g)
+            accidentals[i]=a.count('+') - a.count('-')
+            index=(int(g)-1+key_signature*4)%7
+            if (2*index+1) % 7 +1 <= key_signature:
+                accidentals[i]+=1
+            if (5-2*index) % 7 +1 <= -key_signature:
+                accidentals[i]-=1
+            s=note_names[index]
+            if accidentals[i]>0:
+                s+='is'*accidentals[i]
+            elif accidentals[i]<0:
+                s+='es'*(-accidentals[i])
+            if tokens[i][-1]=='=':
+                s+='!'
+            self.notes[i]=s
+        self.l=len(self.notes)
+        self.grades=grades
+        self.accidentals=accidentals
         return
 
 class bowing_pattern:
@@ -62,7 +91,7 @@ class escala:
         while i < r:
             c=ritmo[i]
             if c=='#':
-                s+=melody.notas[n]
+                s+=melody.notes[n]
             elif c=='%':
                 s+=bowing.bowings[n%b]
                 s+=fingering.fingers[n]
@@ -94,11 +123,11 @@ class escala:
 
 
 ritmo=rhythmic_pattern(r"16","6/8")
-#melodia=melodic_pattern(
-#"1 2 3 4 5 6 7 1 2 3 4 5 6 7 1 2 3 4 5 6 7 1 7 6 5 4 3 2 1 7 6 5 4 3 2 1 7 6 5 4 3 2 1", "-2")
-melodia=melodic_pattern("bes d c bes c d ees f g a bes c d ees f g a bes c d ees f g a bes a g f ees d c bes a g f ees d c bes a g f ees d c bes d c", "bes")
-arcos=bowing_pattern(r"( . ) ( . )")
+melodia=melodic_pattern(
+"1 3 2 1 2 3 4 5 6 7 1 2 3 4 5 6 7 1 2 3 4 5 6 7 1 7 6 5 4 3 2 1 7 6 5 4 3 2 1 7 6 5 4 3 2 1 3 2", -2)
+#melodia=melodic_pattern("bes d c bes c d ees f g a bes c d ees f g a bes c d ees f g a bes a g f ees d c bes a g f ees d c bes a g f ees d c bes d c", "bes")
 digitacion=fingering_pattern("1....... .....1.. ....1... 44...3.. 2....... ........")
+arcos=bowing_pattern(r"( . ) ( . )")
 
 a=escala(melodia, digitacion, arcos, ritmo)
 
